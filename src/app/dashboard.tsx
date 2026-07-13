@@ -1,19 +1,18 @@
 import { useRouter } from 'expo-router';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useProducts } from '../context/ProductContext';
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { products, categories, totalStock, lowStockCount } = useProducts();
 
-  const myProducts = [
-    { id: '1', name: 'Electric Pan 1.5L', stock: 15 },
-    { id: '2', name: 'Ceramic Electric Pan', stock: 8 },
-    { id: '3', name: 'Shabu Electric Pan', stock: 20 },
-  ];
-  const totalStock = myProducts.reduce((sum, item) => sum + item.stock, 0);
+  // "New items" = number of products currently in the catalog (updates the
+  // moment a product is added on the Add Product screen).
+  const newItemsCount = products.length;
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header with Updated Logo */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity><Text style={styles.headerIcon}>☰</Text></TouchableOpacity>
         <Text style={styles.headerTitle}>Cooking Start</Text>
@@ -27,28 +26,28 @@ export default function DashboardScreen() {
         <Text style={styles.sectionTitle}>Recent activity</Text>
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{newItemsCount}</Text>
+            <Text style={styles.statLabel}>PRODUCTS</Text>
+          </View>
+          <View style={styles.statCard}>
             <Text style={styles.statNumber}>{totalStock}</Text>
-            <Text style={styles.statLabel}>NEW ITEMS</Text>
+            <Text style={styles.statLabel}>TOTAL STOCK</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>123</Text>
-            <Text style={styles.statLabel}>NEW ORDERS</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>12</Text>
-            <Text style={styles.statLabel}>REFUNDS</Text>
+            <Text style={styles.statNumber}>{lowStockCount}</Text>
+            <Text style={styles.statLabel}>LOW STOCK</Text>
           </View>
         </View>
 
         {/* Row 2 Stats */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>1</Text>
-            <Text style={styles.statLabel}>MESSAGE</Text>
+            <Text style={styles.statNumber}>{categories.length}</Text>
+            <Text style={styles.statLabel}>CATEGORIES</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>4</Text>
-            <Text style={styles.statLabel}>GROUPS</Text>
+            <Text style={styles.statLabel}>STORES</Text>
           </View>
           <TouchableOpacity style={styles.viewMoreCard} onPress={() => router.push('/products')}>
             <Text style={styles.viewMoreArrow}>➔</Text>
@@ -56,51 +55,60 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Sales Chart Box */}
-        <Text style={styles.sectionTitle}>Sales</Text>
+        {/* Stock by product (replaces the fake static bar chart) */}
+        <Text style={styles.sectionTitle}>Stock by product</Text>
         <View style={styles.chartBox}>
           <View style={styles.chartBars}>
-            <View style={[styles.bar, { height: 70 }]} />
-            <View style={[styles.bar, { height: 110 }]} />
-            <View style={[styles.bar, { height: 40 }]} />
-            <View style={[styles.bar, { height: 130 }]} />
+            {products.slice(0, 4).map((p) => (
+              <View
+                key={p.id}
+                style={[
+                  styles.bar,
+                  { height: Math.min(130, Math.max(10, p.stock * 4)) },
+                ]}
+              />
+            ))}
           </View>
           <View style={styles.chartLabels}>
-            <Text style={styles.chartLabel}>Confirmed</Text>
-            <Text style={styles.chartLabel}>Packed</Text>
-            <Text style={styles.chartLabel}>Refunded</Text>
-            <Text style={styles.chartLabel}>Shipped</Text>
+            {products.slice(0, 4).map((p) => (
+              <Text key={p.id} style={styles.chartLabel} numberOfLines={1}>
+                {p.name.length > 10 ? `${p.name.slice(0, 10)}…` : p.name}
+              </Text>
+            ))}
           </View>
         </View>
 
-        {/* Categories Grid */}
-        <Text style={styles.sectionTitle}>Top item categories</Text>
+        {/* Categories Grid - now driven by real product categories */}
+        <Text style={styles.sectionTitle}>Item categories</Text>
         <View style={styles.categoriesGrid}>
-          <View style={styles.catBox}><Text style={styles.catEmoji}>🍳</Text></View>
-          <View style={styles.catBox}><Text style={styles.catEmoji}>🔌</Text></View>
-          <View style={styles.catBox}><Text style={styles.catEmoji}>🍲</Text></View>
-          <View style={styles.catBox}><Text style={styles.catEmoji}>🥣</Text></View>
-          <View style={styles.catBox}><Text style={styles.catEmoji}>📦</Text></View>
-          <View style={styles.catBox}><Text style={styles.catEmoji}>⚙️</Text></View>
+          {categories.map((cat) => (
+            <View key={cat.name} style={styles.catBox}>
+              <Text style={styles.catEmoji}>{cat.icon}</Text>
+              <Text style={styles.catCount}>{cat.count}</Text>
+            </View>
+          ))}
         </View>
-        <TouchableOpacity><Text style={styles.centerLinkText}>View more</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/categories')}>
+          <Text style={styles.centerLinkText}>View more</Text>
+        </TouchableOpacity>
 
         {/* Status Lists */}
-        <Text style={styles.sectionTitle}>Top item categories status</Text>
+        <Text style={styles.sectionTitle}>Inventory status</Text>
         <View style={styles.listBox}>
-          <View style={styles.listItem}><Text style={styles.listText}>Low stock items</Text><Text style={styles.listNum}>12 ⚠️</Text></View>
-          <View style={styles.listItem}><Text style={styles.listText}>Item categories</Text><Text style={styles.listNum}>6</Text></View>
-          <View style={styles.listItem_last}><Text style={styles.listText}>Refunded items</Text><Text style={styles.listNum}>1</Text></View>
+          <View style={styles.listItem}>
+            <Text style={styles.listText}>Low stock items</Text>
+            <Text style={styles.listNum}>{lowStockCount} ⚠️</Text>
+          </View>
+          <View style={styles.listItem}>
+            <Text style={styles.listText}>Item categories</Text>
+            <Text style={styles.listNum}>{categories.length}</Text>
+          </View>
+          <View style={styles.listItem_last}>
+            <Text style={styles.listText}>Total products</Text>
+            <Text style={styles.listNum}>{products.length}</Text>
+          </View>
         </View>
 
-        {/* Stores List */}
-        <Text style={styles.sectionTitle}>Stores list</Text>
-        <View style={styles.listBox}>
-          <View style={styles.listItem}><Text style={styles.listText}>Manchester, UK</Text><Text style={styles.arrow}>➔</Text></View>
-          <View style={styles.listItem}><Text style={styles.listText}>Yorkshire, UK</Text><Text style={styles.arrow}>➔</Text></View>
-          <View style={styles.listItem}><Text style={styles.listText}>Hull, UK</Text><Text style={styles.arrow}>➔</Text></View>
-          <View style={styles.listItem_last}><Text style={styles.listText}>Leicester, UK</Text><Text style={styles.arrow}>➔</Text></View>
-        </View>
         <View style={{ height: 30 }} />
       </ScrollView>
 
@@ -110,7 +118,7 @@ export default function DashboardScreen() {
           <Text style={styles.navIconActive}>🏠</Text>
           <Text style={styles.navTextActive}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/add-product')}>
           <Text style={styles.navIcon}>➕</Text>
           <Text style={styles.navText}>Add</Text>
         </TouchableOpacity>
@@ -118,7 +126,7 @@ export default function DashboardScreen() {
           <Text style={styles.navIcon}>📦</Text>
           <Text style={styles.navText}>Products</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/categories')}>
           <Text style={styles.navIcon}>📁</Text>
           <Text style={styles.navText}>Categories</Text>
         </TouchableOpacity>
@@ -147,10 +155,11 @@ const styles = StyleSheet.create({
   chartBars: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', height: 130, borderBottomWidth: 1, borderBottomColor: '#E6D2CA', paddingBottom: 5 },
   bar: { width: 16, backgroundColor: '#D96B43', borderRadius: 4 },
   chartLabels: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 8 },
-  chartLabel: { fontSize: 10, color: '#666' },
+  chartLabel: { fontSize: 9, color: '#666', width: 60, textAlign: 'center' },
   categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 8 },
   catBox: { width: '31%', height: 75, backgroundColor: '#FCEAE2', borderRadius: 10, marginBottom: 12, justifyContent: 'center', alignItems: 'center' },
   catEmoji: { fontSize: 24 },
+  catCount: { fontSize: 11, color: '#D96B43', fontWeight: 'bold', marginTop: 4 },
   centerLinkText: { textAlign: 'center', color: '#888', fontSize: 12, textDecorationLine: 'underline', marginBottom: 15 },
   listBox: { backgroundColor: 'white', borderRadius: 10, paddingHorizontal: 15, elevation: 1, marginBottom: 5 },
   listItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3EFEF' },

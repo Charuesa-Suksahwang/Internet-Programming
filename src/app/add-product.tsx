@@ -1,18 +1,85 @@
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useProducts } from '../context/ProductContext';
 
 export default function AddProductScreen() {
   const router = useRouter();
+  const { addProduct } = useProducts();
+
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [price, setPrice] = useState('');
   const [code, setCode] = useState('');
   const [stock, setStock] = useState('');
+  const [imageUri, setImageUri] = useState<string | null>(null);
+
+  const handlePickImage = async () => {
+    // Ask for permission to access the photo library first.
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow photo library access to upload an image.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
 
   const handleSave = () => {
-    alert('Product saved successfully!');
+    // Basic validation for the required fields (marked with *).
+    if (!name.trim() || !category.trim() || !price.trim() || !code.trim() || !stock.trim()) {
+      Alert.alert('Missing information', 'Please fill in all fields marked with *.');
+      return;
+    }
+
+    const priceNumber = Number(price);
+    const stockNumber = Number(stock);
+
+    if (Number.isNaN(priceNumber) || priceNumber < 0) {
+      Alert.alert('Invalid price', 'Please enter a valid price.');
+      return;
+    }
+    if (Number.isNaN(stockNumber) || stockNumber < 0) {
+      Alert.alert('Invalid stock', 'Please enter a valid stock quantity.');
+      return;
+    }
+
+    // This is the actual fix: previously handleSave only showed an alert and
+    // navigated away without ever storing the product anywhere. Now it is
+    // pushed into the shared ProductContext, so Products, Dashboard, and
+    // Categories all update immediately.
+    addProduct({
+      name,
+      description,
+      category,
+      price,
+      code,
+      stock: stockNumber,
+      imageUrl: imageUri ?? undefined,
+    });
+
+    Alert.alert('Success', 'Product saved successfully!');
     router.push('/products');
   };
 
@@ -20,36 +87,78 @@ export default function AddProductScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Text style={styles.headerIcon}>➔</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.headerIcon}>➔</Text>
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Add Product</Text>
-        <TouchableOpacity style={styles.profileBtn}><Text style={styles.profileIcon}>👤</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.profileBtn}>
+          <Text style={styles.profileIcon}>👤</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Input Form Fields */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.inputLabel}>Name*</Text>
-        <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="e.g. Smart Electric Pan" />
+        <TextInput
+          style={styles.input}
+          value={name}
+          onChangeText={setName}
+          placeholder="e.g. Smart Electric Pan"
+        />
 
         <Text style={styles.inputLabel}>Description</Text>
-        <TextInput style={[styles.input, styles.textArea]} value={description} onChangeText={setDescription} placeholder="Enter product details..." multiline numberOfLines={3} />
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Enter product details..."
+          multiline
+          numberOfLines={3}
+        />
 
         <Text style={styles.inputLabel}>Category*</Text>
-        <TextInput style={styles.input} value={category} onChangeText={setCategory} placeholder="e.g. Appliances" />
+        <TextInput
+          style={styles.input}
+          value={category}
+          onChangeText={setCategory}
+          placeholder="e.g. Appliances"
+        />
 
         <Text style={styles.inputLabel}>Price*</Text>
-        <TextInput style={styles.input} value={price} onChangeText={setPrice} placeholder="e.g. 590" keyboardType="numeric" />
+        <TextInput
+          style={styles.input}
+          value={price}
+          onChangeText={setPrice}
+          placeholder="e.g. 590"
+          keyboardType="numeric"
+        />
 
         <Text style={styles.inputLabel}>Item Code*</Text>
         <TextInput style={styles.input} value={code} onChangeText={setCode} placeholder="e.g. VP-004" />
 
         <Text style={styles.inputLabel}>Stock Qty*</Text>
-        <TextInput style={styles.input} value={stock} onChangeText={setStock} placeholder="e.g. 50" keyboardType="numeric" />
+        <TextInput
+          style={styles.input}
+          value={stock}
+          onChangeText={setStock}
+          placeholder="e.g. 50"
+          keyboardType="numeric"
+        />
 
         {/* Upload Photos Area Box */}
         <Text style={styles.inputLabel}>Product Photos*</Text>
-        <TouchableOpacity style={styles.uploadBox}>
-          <Text style={styles.uploadText}>+ Upload Images</Text>
+        <TouchableOpacity style={styles.uploadBox} onPress={handlePickImage}>
+          {imageUri ? (
+            <Image source={{ uri: imageUri }} style={styles.previewImage} />
+          ) : (
+            <Text style={styles.uploadText}>+ Upload Images</Text>
+          )}
         </TouchableOpacity>
+        {imageUri && (
+          <TouchableOpacity onPress={() => setImageUri(null)}>
+            <Text style={styles.removeImageText}>Remove photo</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Save Button */}
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
@@ -92,8 +201,10 @@ const styles = StyleSheet.create({
   inputLabel: { fontSize: 14, fontWeight: '600', color: '#555', marginBottom: 8, marginTop: 5 },
   input: { backgroundColor: 'white', borderWidth: 1, borderColor: '#EAE5E3', borderRadius: 8, height: 45, paddingHorizontal: 15, marginBottom: 15, fontSize: 15 },
   textArea: { height: 80, paddingTop: 12, textAlignVertical: 'top' },
-  uploadBox: { borderStyle: 'dashed', borderWidth: 2, borderColor: '#D96B43', borderRadius: 8, height: 100, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FCEAE2', marginBottom: 25 },
+  uploadBox: { borderStyle: 'dashed', borderWidth: 2, borderColor: '#D96B43', borderRadius: 8, height: 100, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FCEAE2', marginBottom: 8, overflow: 'hidden' },
   uploadText: { color: '#D96B43', fontWeight: '600', fontSize: 14 },
+  previewImage: { width: '100%', height: '100%' },
+  removeImageText: { color: '#D96B43', fontSize: 12, textAlign: 'center', marginBottom: 17, textDecorationLine: 'underline' },
   saveButton: { backgroundColor: '#D96B43', height: 48, borderRadius: 8, justifyContent: 'center', alignItems: 'center', elevation: 2 },
   saveButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
   bottomNav: { flexDirection: 'row', backgroundColor: 'white', paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#EEE' },

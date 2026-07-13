@@ -1,43 +1,37 @@
 import { useRouter } from 'expo-router';
-import { Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-
-const products = [
-  {
-    id: '1',
-    name: 'Multi-Purpose Electric Pan 1.5L',
-    stock: 15,
-    category: 'Appliances',
-    location: '3 stores',
-    status: 'Active',
-    imageUrl: 'https://via.placeholder.com/80x80/F5BEB0/333333?text=Pan+1.5L',
-  },
-  {
-    id: '2',
-    name: 'Minimalist Ceramic Electric Pan',
-    stock: 8,
-    category: 'Appliances',
-    location: '2 stores',
-    status: 'Active',
-    imageUrl: 'https://via.placeholder.com/80x80/F5BEB0/333333?text=Minimal+Pan',
-  },
-  {
-    id: '3',
-    name: 'Electric Shabu Grill & Pan',
-    stock: 20,
-    category: 'Appliances',
-    location: '4 stores',
-    status: 'Active',
-    imageUrl: 'https://via.placeholder.com/80x80/F5BEB0/333333?text=Shabu+Pan',
-  },
-];
+import { useMemo, useState } from 'react';
+import {
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useProducts } from '../context/ProductContext';
 
 export default function ProductsScreen() {
   const router = useRouter();
+  const { products } = useProducts();
+  const [query, setQuery] = useState('');
+
+  // Search box was previously disabled (editable={false}) and the product
+  // list was a hardcoded array. Now it filters the live, shared product list.
+  const filteredProducts = useMemo(() => {
+    if (!query.trim()) return products;
+    const q = query.trim().toLowerCase();
+    return products.filter(
+      (p) => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
+    );
+  }, [products, query]);
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.menuButton}>
@@ -57,10 +51,11 @@ export default function ProductsScreen() {
             style={styles.searchInput}
             placeholder="Search products..."
             placeholderTextColor="#999"
-            editable={false}
+            value={query}
+            onChangeText={setQuery}
           />
         </View>
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity style={styles.addButton} onPress={() => router.push('/add-product')}>
           <Text style={styles.addButtonText}>+ Add Product</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.filterButton}>
@@ -70,14 +65,17 @@ export default function ProductsScreen() {
 
       {/* Products Scroll List */}
       <ScrollView style={styles.productsList} showsVerticalScrollIndicator={false}>
-        {products.map((product) => (
+        {filteredProducts.length === 0 && (
+          <Text style={styles.emptyText}>No products found.</Text>
+        )}
+        {filteredProducts.map((product) => (
           <View key={product.id} style={styles.productCard}>
             <Image source={{ uri: product.imageUrl }} style={styles.productImage} resizeMode="cover" />
             <View style={styles.productInfo}>
               <View style={styles.productDetails}>
                 <Text style={styles.stockText}>Stock: {product.stock} in stock</Text>
                 <Text style={styles.categoryText}>Category: {product.category}</Text>
-                <Text style={styles.locationText}>Location: {product.location}</Text>
+                <Text style={styles.locationText}>Code: {product.code}</Text>
               </View>
               <View style={styles.productActions}>
                 <TouchableOpacity style={styles.statusButton}>
@@ -91,6 +89,7 @@ export default function ProductsScreen() {
             <Text style={styles.productName}>{product.name}</Text>
           </View>
         ))}
+        <View style={{ height: 20 }} />
       </ScrollView>
 
       {/* Bottom Nav */}
@@ -99,7 +98,7 @@ export default function ProductsScreen() {
           <Text style={styles.navIcon}>🏠</Text>
           <Text style={styles.navText}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/add-product')}>
           <Text style={styles.navIcon}>➕</Text>
           <Text style={styles.navText}>Add</Text>
         </TouchableOpacity>
@@ -107,7 +106,7 @@ export default function ProductsScreen() {
           <Text style={styles.navIconActive}>📦</Text>
           <Text style={styles.navTextActive}>Products</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/categories')}>
           <Text style={styles.navIcon}>📁</Text>
           <Text style={styles.navText}>Categories</Text>
         </TouchableOpacity>
@@ -133,6 +132,7 @@ const styles = StyleSheet.create({
   filterButton: { paddingHorizontal: 10, paddingVertical: 10 },
   filterText: { color: '#D96B43', fontSize: 14, fontWeight: '500' },
   productsList: { flex: 1, padding: 20 },
+  emptyText: { textAlign: 'center', color: '#999', marginTop: 30 },
   productCard: { backgroundColor: 'white', borderRadius: 12, padding: 15, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
   productImage: { width: 60, height: 60, borderRadius: 8, marginBottom: 10, backgroundColor: '#f0f0f0' },
   productInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },

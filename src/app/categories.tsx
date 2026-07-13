@@ -1,17 +1,10 @@
 import { useRouter } from 'expo-router';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-const categoriesData = [
-  { id: '1', name: 'Mini Electric Pans', count: '12 items', icon: '🍳' },
-  { id: '2', name: 'Shabu Hotpots', count: '18 items', icon: '🍲' },
-  { id: '3', name: 'BBQ Grill Plates', count: '10 items', icon: '🥩' },
-  { id: '4', name: 'Multi-Cookers', count: '15 items', icon: '🥣' },
-  { id: '5', name: 'Smart Kettles', count: '8 items', icon: '🔌' },
-  { id: '6', name: 'Spare Parts & Accessories', count: '25 items', icon: '⚙️' },
-];
+import { useProducts } from '../context/ProductContext';
 
 export default function CategoriesScreen() {
   const router = useRouter();
+  const { categories } = useProducts();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -24,16 +17,23 @@ export default function CategoriesScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Categories List View */}
+      {/* Categories List View - now built from real product data */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {categoriesData.map((item) => (
-          <TouchableOpacity key={item.id} style={styles.categoryRow}>
+        {categories.length === 0 && (
+          <Text style={styles.emptyText}>No categories yet. Add a product to create one.</Text>
+        )}
+        {categories.map((item) => (
+          <TouchableOpacity
+            key={item.name}
+            style={styles.categoryRow}
+            onPress={() => router.push('/products')}
+          >
             <View style={styles.iconContainer}>
               <Text style={styles.categoryEmoji}>{item.icon}</Text>
             </View>
             <View style={styles.textContainer}>
               <Text style={styles.categoryName}>{item.name}</Text>
-              <Text style={styles.categoryCount}>{item.count}</Text>
+              <Text style={styles.categoryCount}>{item.count} item{item.count === 1 ? '' : 's'}</Text>
             </View>
             <Text style={styles.arrowIcon}>➔</Text>
           </TouchableOpacity>
@@ -72,6 +72,7 @@ const styles = StyleSheet.create({
   profileBtn: { backgroundColor: '#D96B43', width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
   profileIcon: { fontSize: 14, color: 'white' },
   content: { padding: 20 },
+  emptyText: { textAlign: 'center', color: '#999', marginTop: 30 },
   categoryRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', padding: 15, borderRadius: 12, marginBottom: 15, elevation: 1, shadowColor: '#000', shadowOpacity: 0.02, shadowRadius: 3 },
   iconContainer: { backgroundColor: '#FCEAE2', width: 45, height: 45, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
   categoryEmoji: { fontSize: 20 },
