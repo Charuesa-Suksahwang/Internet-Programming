@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  FlatList,
   Image,
   SafeAreaView,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -11,22 +12,68 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useProducts } from '../context/ProductContext';
+
+// ⚠️ IMPORTANT: replace this with YOUR OWN GitHub raw URL after you push
+// products.json to your own repository. It must be the "Raw" link, e.g.:
+// https://raw.githubusercontent.com/<your-username>/<your-repo>/main/products.json
+const PRODUCTS_URL =
+  'https://raw.githubusercontent.com/Charuesa-Suksahwang/Internet-Programming/refs/heads/main/products.json';
+
+type Product = {
+  id: string;
+  name: string;
+  stock: number;
+  stock_text: string;
+  category: string;
+  location_count: number;
+  location_text: string;
+  badge_status: string; // e.g. "Active" | "Low in stock"
+  image_url: string;
+};
+
+// Badge color changes depending on status, per the GUI spec.
+function badgeStyleFor(status: string) {
+  if (status.toLowerCase() === 'active') {
+    return { backgroundColor: '#8B5CF6' }; // purple
+  }
+  if (status.toLowerCase().includes('low')) {
+    return { backgroundColor: '#4C1D95' }; // dark purple/blue
+  }
+  return { backgroundColor: '#D96B43' }; // fallback
+}
 
 export default function ProductsScreen() {
   const router = useRouter();
-  const { products } = useProducts();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
 
-  // Search box was previously disabled (editable={false}) and the product
-  // list was a hardcoded array. Now it filters the live, shared product list.
-  const filteredProducts = useMemo(() => {
-    if (!query.trim()) return products;
-    const q = query.trim().toLowerCase();
-    return products.filter(
-      (p) => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
-    );
-  }, [products, query]);
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch(PRODUCTS_URL);
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        const data: Product[] = await response.json();
+        setProducts(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load products');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProducts();
+  }, []);
+
+  const filteredProducts = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(query.trim().toLowerCase()) ||
+      p.category.toLowerCase().includes(query.trim().toLowerCase())
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -43,7 +90,7 @@ export default function ProductsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Search Container */}
+      {/* Search + Action bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Text style={styles.searchIcon}>🔍</Text>
@@ -63,34 +110,55 @@ export default function ProductsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Products Scroll List */}
-      <ScrollView style={styles.productsList} showsVerticalScrollIndicator={false}>
-        {filteredProducts.length === 0 && (
-          <Text style={styles.emptyText}>No products found.</Text>
-        )}
-        {filteredProducts.map((product) => (
-          <View key={product.id} style={styles.productCard}>
-            <Image source={{ uri: product.imageUrl }} style={styles.productImage} resizeMode="cover" />
-            <View style={styles.productInfo}>
-              <View style={styles.productDetails}>
-                <Text style={styles.stockText}>Stock: {product.stock} in stock</Text>
-                <Text style={styles.categoryText}>Category: {product.category}</Text>
-                <Text style={styles.locationText}>Code: {product.code}</Text>
+      {/* Loading / error states */}
+      {loading && (
+        <View style={styles.centerBox}>
+          <ActivityIndicator size="large" color="#D96B43" />
+          <Text style={styles.loadingText}>Loading products from GitHub...</Text>
+        </View>
+      )}
+
+      {!loading && error && (
+        <View style={styles.centerBox}>
+          <Text style={styles.errorText}>Could not load products.</Text>
+          <Text style={styles.errorSubText}>{error}</Text>
+          <Text style={styles.errorSubText}>
+            Check that PRODUCTS_URL in products.tsx points to your GitHub raw JSON file.
+          </Text>
+        </View>
+      )}
+
+      {/* Product List (FlatList, per spec) */}
+      {!loading && !error && (
+        <FlatList
+          style={styles.productsList}
+          data={filteredProducts}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={<Text style={styles.emptyText}>No products found.</Text>}
+          renderItem={({ item }) => (
+            <View style={styles.productCard}>
+              <Image source={{ uri: item.image_url }} style={styles.productImage} resizeMode="cover" />
+              <View style={styles.productInfo}>
+                <View style={styles.productDetails}>
+                  <Text style={styles.stockText}>Stock: {item.stock_text}</Text>
+                  <Text style={styles.categoryText}>Category: {item.category}</Text>
+                  <Text style={styles.locationText}>Location: {item.location_text}</Text>
+                </View>
+                <View style={styles.productActions}>
+                  <TouchableOpacity style={[styles.statusButton, badgeStyleFor(item.badge_status)]}>
+                    <Text style={styles.statusText}>{item.badge_status}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.moreButton}>
+                    <Text style={styles.moreIcon}>⋮</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={styles.productActions}>
-                <TouchableOpacity style={styles.statusButton}>
-                  <Text style={styles.statusText}>{product.status}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.moreButton}>
-                  <Text style={styles.moreIcon}>⋮</Text>
-                </TouchableOpacity>
-              </View>
+              <Text style={styles.productName}>{item.name}</Text>
             </View>
-            <Text style={styles.productName}>{product.name}</Text>
-          </View>
-        ))}
-        <View style={{ height: 20 }} />
-      </ScrollView>
+          )}
+        />
+      )}
 
       {/* Bottom Nav */}
       <View style={styles.bottomNav}>
@@ -131,6 +199,10 @@ const styles = StyleSheet.create({
   addButtonText: { color: 'white', fontSize: 14, fontWeight: '600' },
   filterButton: { paddingHorizontal: 10, paddingVertical: 10 },
   filterText: { color: '#D96B43', fontSize: 14, fontWeight: '500' },
+  centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 30 },
+  loadingText: { marginTop: 10, color: '#888', fontSize: 13 },
+  errorText: { color: '#C0392B', fontWeight: '700', fontSize: 15, marginBottom: 6 },
+  errorSubText: { color: '#888', fontSize: 12, textAlign: 'center', marginTop: 4 },
   productsList: { flex: 1, padding: 20 },
   emptyText: { textAlign: 'center', color: '#999', marginTop: 30 },
   productCard: { backgroundColor: 'white', borderRadius: 12, padding: 15, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
@@ -141,7 +213,7 @@ const styles = StyleSheet.create({
   categoryText: { fontSize: 14, color: '#666', marginBottom: 2 },
   locationText: { fontSize: 14, color: '#666' },
   productActions: { flexDirection: 'row', alignItems: 'center' },
-  statusButton: { backgroundColor: '#D96B43', borderRadius: 15, paddingHorizontal: 15, paddingVertical: 5, marginRight: 10 },
+  statusButton: { borderRadius: 15, paddingHorizontal: 15, paddingVertical: 5, marginRight: 10 },
   statusText: { color: 'white', fontSize: 12, fontWeight: '500' },
   moreButton: { width: 30, height: 30, justifyContent: 'center', alignItems: 'center' },
   moreIcon: { fontSize: 20, color: '#D96B43' },
