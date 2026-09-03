@@ -191,22 +191,22 @@ def build():
 
     doc.add_page_break()
 
-    add_heading(doc, "สำหรับผู้ตรวจ: วิธีเปิดระบบจาก GitHub")
-    add_body(doc, "ไม่ต้องใช้ Username หรือ Password ของผู้พัฒนา ผู้ตรวจสามารถตั้งบัญชีสำหรับทดลองเองได้ตามขั้นตอนนี้")
+    add_heading(doc, "แนวทางการติดตั้งระบบจาก GitHub")
+    add_body(doc, "ระบบรองรับการกำหนดบัญชีผู้ดูแลระบบใหม่ผ่านไฟล์การตั้งค่า โดยไม่ต้องใช้ข้อมูลบัญชีของผู้พัฒนา")
     add_numbered(doc, [
         "ดาวน์โหลดหรือ clone โครงการจาก GitHub",
         "เปิด phpMyAdmin แล้วสร้างฐานข้อมูลใหม่ เช่น cooking_start",
         "เลือกฐานข้อมูลที่สร้าง แล้วกด Import เลือกไฟล์ ip_std6730202602.sql และกด Import เพื่อสร้างตาราง products และ users",
         "เปิดโฟลเดอร์ backend คัดลอกไฟล์ .env.example แล้วเปลี่ยนชื่อไฟล์ที่คัดลอกเป็น .env",
-        "เปิด backend/.env แล้วแทนค่าตัวอย่าง DB_USER, DB_PASSWORD และ DB_NAME ด้วยข้อมูล MySQL ของเครื่องผู้ตรวจ",
-        "ใน backend/.env ตั้ง ADMIN_USERNAME และ ADMIN_PASSWORD ตามบัญชีที่ต้องการใช้ทดสอบ",
+        "กำหนดค่า DB_USER, DB_PASSWORD และ DB_NAME ใน backend/.env ให้ตรงกับ MySQL ของเครื่องที่ใช้งาน",
+        "กำหนด ADMIN_USERNAME และ ADMIN_PASSWORD ใน backend/.env สำหรับบัญชีผู้ดูแลระบบ",
         "เปิด Terminal ในโฟลเดอร์ backend แล้วรัน npm install และ npm start ระบบจะแสดงว่า API running on port 3056",
         "ที่โฟลเดอร์หลักของโครงการ คัดลอก .env.example เป็น .env แล้วตั้ง EXPO_PUBLIC_API_BASE_URL=http://localhost:3056/api",
         "เปิด Terminal ที่โฟลเดอร์หลัก รัน npm install แล้วรัน npx expo start",
         "เปิดแอป แล้วล็อกอินด้วย ADMIN_USERNAME และ ADMIN_PASSWORD ที่ตั้งไว้ใน backend/.env",
     ])
-    add_note(doc, "ตัวอย่าง backend/.env:", "DB_NAME=cooking_start, ADMIN_USERNAME=teacher และ ADMIN_PASSWORD=1234 (ให้เปลี่ยน DB_USER และ DB_PASSWORD ตาม MySQL ของเครื่องที่ใช้)")
-    add_note(doc, "สำคัญ:", "ชื่อไฟล์ต้องเป็น .env จริง ๆ ไม่ใช่ .env.txt และไม่ต้องนำไฟล์ .env ขึ้น GitHub")
+    add_note(doc, "ตัวอย่างค่า backend/.env:", "DB_NAME=cooking_start, ADMIN_USERNAME=teacher และ ADMIN_PASSWORD=1234 โดย DB_USER และ DB_PASSWORD ต้องกำหนดตาม MySQL ของเครื่องที่ใช้งาน")
+    add_note(doc, "ข้อกำหนด:", "ชื่อไฟล์ต้องเป็น .env ไม่ใช่ .env.txt และไม่ควรนำไฟล์ .env ขึ้น GitHub")
 
     doc.add_page_break()
 
@@ -279,17 +279,17 @@ def build():
     add_note(doc, "ข้อควรระวัง:", "การลบสินค้าไม่สามารถย้อนกลับได้ ควรตรวจสอบชื่อสินค้าก่อนกดยืนยัน")
 
     add_heading(doc, "7. การติดตั้งระบบบนเครื่องอื่น")
-    add_body(doc, "ส่วนนี้ใช้เมื่ออาจารย์ต้องการดาวน์โหลดโค้ดจาก GitHub และทดลองระบบด้วยฐานข้อมูลของตนเอง")
+    add_body(doc, "ใช้ขั้นตอนนี้สำหรับติดตั้งและทดสอบระบบจาก repository บน GitHub")
     add_numbered(doc, [
         "ดาวน์โหลดโค้ดจาก GitHub และ import ไฟล์ ip_std6730202602.sql ใน phpMyAdmin เพื่อสร้างตารางและข้อมูลสินค้า",
         "เข้าโฟลเดอร์ backend แล้วคัดลอกไฟล์ .env.example เป็นชื่อ .env",
-        "กรอกข้อมูลฐานข้อมูลใน backend/.env และกำหนด ADMIN_USERNAME กับ ADMIN_PASSWORD สำหรับใช้ล็อกอิน",
+        "กำหนดข้อมูลฐานข้อมูลใน backend/.env และระบุ ADMIN_USERNAME กับ ADMIN_PASSWORD สำหรับเข้าสู่ระบบ",
         "ติดตั้ง dependencies ในโฟลเดอร์ backend ด้วย npm install แล้วเริ่ม Backend ด้วย npm start",
-        "ที่โฟลเดอร์หลักของโปรเจกต์ คัดลอก .env.example เป็น .env แล้วกำหนด EXPO_PUBLIC_API_BASE_URL ให้ตรงกับ Backend เช่น http://localhost:3056/api",
+        "ที่โฟลเดอร์หลักของโครงการ คัดลอก .env.example เป็น .env แล้วกำหนด EXPO_PUBLIC_API_BASE_URL ให้ตรงกับ Backend เช่น http://localhost:3056/api",
         "ติดตั้ง dependencies ของแอปด้วย npm install แล้วเริ่มแอปด้วย npx expo start",
         "ล็อกอินด้วย Username และ Password ที่กำหนดไว้ใน backend/.env",
     ])
-    add_note(doc, "เรื่องความปลอดภัย:", "ไฟล์ .env ไม่มีใน GitHub เพราะเก็บข้อมูลฐานข้อมูลและรหัสผ่าน ส่วนไฟล์ .env.example เป็นเพียงแบบฟอร์มตัวอย่างสำหรับตั้งค่าบนเครื่องใหม่")
+    add_note(doc, "ความปลอดภัย:", "ไฟล์ .env ไม่อยู่ใน GitHub เนื่องจากมีข้อมูลเชื่อมต่อฐานข้อมูลและรหัสผ่าน ส่วน .env.example ใช้เป็นแม่แบบสำหรับกำหนดค่าบนเครื่องใหม่")
 
     add_heading(doc, "8. สรุปการทำงานของระบบ")
     add_body(doc, "Frontend รับข้อมูลและแสดงผลให้ผู้ใช้ ส่วน Backend ตรวจสอบสิทธิ์และบันทึกข้อมูลลงฐานข้อมูล MySQL")
