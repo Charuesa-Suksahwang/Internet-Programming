@@ -1,10 +1,26 @@
-import { useRouter } from 'expo-router';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback } from 'react';
+import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useProducts } from '../context/ProductContext';
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { products, categories, totalStock, lowStockCount } = useProducts();
+  const {
+    products,
+    categories,
+    totalStock,
+    lowStockCount,
+    storeCount,
+    isLoading,
+    error,
+    refreshProducts,
+  } = useProducts();
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshProducts();
+    }, [refreshProducts])
+  );
 
   // "New items" = number of products currently in the catalog (updates the
   // moment a product is added on the Add Product screen).
@@ -26,15 +42,15 @@ export default function DashboardScreen() {
         <Text style={styles.sectionTitle}>Recent activity</Text>
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{newItemsCount}</Text>
+            <Text style={styles.statNumber}>{isLoading && products.length === 0 ? '–' : newItemsCount}</Text>
             <Text style={styles.statLabel}>PRODUCTS</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{totalStock}</Text>
+            <Text style={styles.statNumber}>{isLoading && products.length === 0 ? '–' : totalStock}</Text>
             <Text style={styles.statLabel}>TOTAL STOCK</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{lowStockCount}</Text>
+            <Text style={styles.statNumber}>{isLoading && products.length === 0 ? '–' : lowStockCount}</Text>
             <Text style={styles.statLabel}>LOW STOCK</Text>
           </View>
         </View>
@@ -42,11 +58,11 @@ export default function DashboardScreen() {
         {/* Row 2 Stats */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{categories.length}</Text>
+            <Text style={styles.statNumber}>{isLoading && products.length === 0 ? '–' : categories.length}</Text>
             <Text style={styles.statLabel}>CATEGORIES</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>4</Text>
+            <Text style={styles.statNumber}>{isLoading && products.length === 0 ? '–' : storeCount}</Text>
             <Text style={styles.statLabel}>STORES</Text>
           </View>
           <TouchableOpacity style={styles.viewMoreCard} onPress={() => router.push('/products')}>
@@ -54,6 +70,16 @@ export default function DashboardScreen() {
             <Text style={styles.viewMoreText}>View more</Text>
           </TouchableOpacity>
         </View>
+
+        {isLoading && products.length === 0 && (
+          <View style={styles.activityStatus}>
+            <ActivityIndicator size="small" color="#D96B43" />
+            <Text style={styles.activityStatusText}>Loading current product activity...</Text>
+          </View>
+        )}
+        {error && products.length === 0 && (
+          <Text style={styles.activityError}>Could not load the current product activity. Please try again.</Text>
+        )}
 
         {/* Stock by product (replaces the fake static bar chart) */}
         <Text style={styles.sectionTitle}>Stock by product</Text>
@@ -64,7 +90,7 @@ export default function DashboardScreen() {
                 key={p.id}
                 style={[
                   styles.bar,
-                  { height: Math.min(130, Math.max(10, p.stock * 4)) },
+                  { height: Math.min(130, Math.max(10, Number(p.stock) * 4 || 10)) },
                 ]}
               />
             ))}
@@ -151,6 +177,9 @@ const styles = StyleSheet.create({
   viewMoreCard: { backgroundColor: '#FCEAE2', padding: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center', width: '31%' },
   viewMoreArrow: { fontSize: 16, color: '#D96B43', fontWeight: 'bold' },
   viewMoreText: { fontSize: 9, color: '#D96B43', fontWeight: 'bold', marginTop: 2 },
+  activityStatus: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  activityStatusText: { marginLeft: 8, color: '#888', fontSize: 12 },
+  activityError: { color: '#B42318', fontSize: 12, textAlign: 'center', marginBottom: 8 },
   chartBox: { backgroundColor: '#FCEAE2', borderRadius: 12, padding: 15, height: 180, justifyContent: 'flex-end', marginBottom: 10 },
   chartBars: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', height: 130, borderBottomWidth: 1, borderBottomColor: '#E6D2CA', paddingBottom: 5 },
   bar: { width: 16, backgroundColor: '#D96B43', borderRadius: 4 },

@@ -1,44 +1,74 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { isSigningIn, signIn } = useAuth();
 
-  const handleLogin = () => {
-    router.push('/dashboard');
+  const handleLogin = async () => {
+    if (!username.trim() || !password) {
+      setError('Please enter your username and password.');
+      return;
+    }
+
+    setError(null);
+    try {
+      await signIn({ username, password });
+      router.replace('/dashboard');
+    } catch (loginError) {
+      setError(loginError instanceof Error ? loginError.message : 'Unable to sign in. Please try again.');
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Updated Logo Name */}
       <Text style={styles.logoText}>Cooking Start</Text>
+      <Text style={styles.subtitle}>Sign in to manage your inventory</Text>
       
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Username</Text>
-        <TextInput 
-          style={styles.input} 
+        <TextInput
+          style={styles.input}
           value={username}
-          onChangeText={setUsername}
+          onChangeText={(value) => {
+            setUsername(value);
+            setError(null);
+          }}
           placeholder="Enter username"
           placeholderTextColor="#FBCFE8"
+          autoCapitalize="none"
+          autoCorrect={false}
+          editable={!isSigningIn}
         />
         
         <Text style={styles.label}>Password</Text>
-        <TextInput 
-          style={styles.input} 
+        <TextInput
+          style={styles.input}
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(value) => {
+            setPassword(value);
+            setError(null);
+          }}
           secureTextEntry
           placeholder="Enter password"
           placeholderTextColor="#FBCFE8"
+          editable={!isSigningIn}
         />
       </View>
 
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <Text style={styles.loginButtonText}>Log in</Text>
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+      <TouchableOpacity
+        style={[styles.loginButton, isSigningIn && styles.loginButtonDisabled]}
+        onPress={handleLogin}
+        disabled={isSigningIn}
+      >
+        {isSigningIn ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.loginButtonText}>Log in</Text>}
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -56,8 +86,9 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: 'bold',
     color: '#F4A28C',
-    marginBottom: 50,
+    marginBottom: 8,
   },
+  subtitle: { color: '#8A8A8A', fontSize: 15, marginBottom: 42 },
   inputContainer: {
     width: '100%',
     maxWidth: 400,
@@ -86,9 +117,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 10,
   },
+  loginButtonDisabled: { opacity: 0.65 },
   loginButtonText: {
     color: '#DF7B61',
     fontSize: 16,
     fontWeight: 'bold',
   },
+  errorText: { color: '#B42318', fontSize: 14, marginBottom: 12, textAlign: 'center' },
 });
