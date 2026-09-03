@@ -191,6 +191,25 @@ def build():
 
     doc.add_page_break()
 
+    add_heading(doc, "สำหรับผู้ตรวจ: วิธีเปิดระบบจาก GitHub")
+    add_body(doc, "ไม่ต้องใช้ Username หรือ Password ของผู้พัฒนา ผู้ตรวจสามารถตั้งบัญชีสำหรับทดลองเองได้ตามขั้นตอนนี้")
+    add_numbered(doc, [
+        "ดาวน์โหลดหรือ clone โครงการจาก GitHub",
+        "เปิด phpMyAdmin แล้วสร้างฐานข้อมูลใหม่ เช่น cooking_start",
+        "เลือกฐานข้อมูลที่สร้าง แล้วกด Import เลือกไฟล์ ip_std6730202602.sql และกด Import เพื่อสร้างตาราง products และ users",
+        "เปิดโฟลเดอร์ backend คัดลอกไฟล์ .env.example แล้วเปลี่ยนชื่อไฟล์ที่คัดลอกเป็น .env",
+        "เปิด backend/.env แล้วแทนค่าตัวอย่าง DB_USER, DB_PASSWORD และ DB_NAME ด้วยข้อมูล MySQL ของเครื่องผู้ตรวจ",
+        "ใน backend/.env ตั้ง ADMIN_USERNAME และ ADMIN_PASSWORD ตามบัญชีที่ต้องการใช้ทดสอบ",
+        "เปิด Terminal ในโฟลเดอร์ backend แล้วรัน npm install และ npm start ระบบจะแสดงว่า API running on port 3056",
+        "ที่โฟลเดอร์หลักของโครงการ คัดลอก .env.example เป็น .env แล้วตั้ง EXPO_PUBLIC_API_BASE_URL=http://localhost:3056/api",
+        "เปิด Terminal ที่โฟลเดอร์หลัก รัน npm install แล้วรัน npx expo start",
+        "เปิดแอป แล้วล็อกอินด้วย ADMIN_USERNAME และ ADMIN_PASSWORD ที่ตั้งไว้ใน backend/.env",
+    ])
+    add_note(doc, "ตัวอย่าง backend/.env:", "DB_NAME=cooking_start, ADMIN_USERNAME=teacher และ ADMIN_PASSWORD=1234 (ให้เปลี่ยน DB_USER และ DB_PASSWORD ตาม MySQL ของเครื่องที่ใช้)")
+    add_note(doc, "สำคัญ:", "ชื่อไฟล์ต้องเป็น .env จริง ๆ ไม่ใช่ .env.txt และไม่ต้องนำไฟล์ .env ขึ้น GitHub")
+
+    doc.add_page_break()
+
     add_heading(doc, "1. การเข้าสู่ระบบ")
     add_body(doc, "เมื่อเปิดแอป ระบบจะแสดงหน้า Sign in เพื่อป้องกันไม่ให้ผู้ที่ยังไม่ได้รับสิทธิ์จัดการข้อมูลสินค้า")
     add_numbered(doc, [
