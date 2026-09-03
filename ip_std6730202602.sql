@@ -66,12 +66,9 @@ CREATE TABLE `users` (
   `createdAt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `users`
---
-
-INSERT INTO `users` (`id`, `username`, `passwordHash`, `role`, `createdAt`) VALUES
-(1, 'Charuesa', 'scrypt$0cb7b3096569c9536cf329d5ed404fb8$b983e61860f2b0499831b771d780df64949108040df4e384617216c5d0bf50e5f03b508b27452e725b85fb5e38cf9acc58700744e98d1b6585a7bdac2c0cab76', 'admin', '2026-08-27 11:31:54');
+-- No user account is included in this export.
+-- When the backend starts for the first time, it creates the initial admin
+-- from ADMIN_USERNAME and ADMIN_PASSWORD in backend/.env.
 
 --
 -- Indexes for dumped tables
@@ -104,7 +101,7 @@ ALTER TABLE `products`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

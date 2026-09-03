@@ -1,6 +1,8 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
-export const API_BASE_URL = 'http://119.59.102.161:3056/api';
+// For another computer/server, create .env from .env.example and set this URL.
+// The current URL remains the default for the hosted class demonstration.
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://119.59.102.161:3056/api';
 
 type LoginInput = {
   username: string;
